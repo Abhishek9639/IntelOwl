@@ -64,11 +64,11 @@ export function AnalyzableOverview({ analyzable }) {
     <Container fluid>
       {/* bar with analyzable id and utilities buttons */}
       <Row
-        className="g-0 d-flex-between-end align-items-center mb-2"
+        className="g-0 d-flex-between-end align-items-center"
         id="utilitiesRow"
       >
         <Col>
-          <h2 className="d-flex align-items-center mb-0">
+          <h2 className="d-flex align-items-center">
             <span className="me-2 text-secondary">
               Artifact #{analyzable.id}
             </span>
@@ -229,7 +229,7 @@ export function AnalyzableOverview({ analyzable }) {
                   />
                 }
                 values={values}
-                size="col-3"
+                size="col-2"
                 disable={values.length === 0}
               />
             ))}

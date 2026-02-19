@@ -11,7 +11,7 @@ from api_app.choices import Classification
 
 
 class ApiVoidAnalyzer(classes.ObservableAnalyzer):
-    url = "https://api.apivoid.com/v2"
+    url = "https://endpoint.apivoid.com"
     _api_key: str = None
 
     def update(self):
@@ -19,26 +19,17 @@ class ApiVoidAnalyzer(classes.ObservableAnalyzer):
 
     def run(self):
         if self.observable_classification == Classification.DOMAIN.value:
-            path = "domain-reputation"
+            path = "domainbl"
             parameter = "host"
         elif self.observable_classification == Classification.IP.value:
-            path = "ip-reputation"
+            path = "iprep"
             parameter = "ip"
         elif self.observable_classification == Classification.URL.value:
-            path = "url-reputation"
+            path = "urlrep"
             parameter = "url"
         else:
             raise AnalyzerConfigurationException("not supported")
-
-        complete_url = f"{self.url}/{path}"
-
-        headers = {
-            "Content-Type": "application/json",
-            "X-API-Key": self._api_key,
-        }
-
-        payload = {parameter: self.observable_name}
-
-        r = requests.post(complete_url, headers=headers, json=payload)
+        complete_url = f"{self.url}/{path}/v1/pay-as-you-go/?key={self._api_key}&{parameter}={self.observable_name}"
+        r = requests.get(complete_url)
         r.raise_for_status()
         return r.json()

@@ -3,7 +3,6 @@
 
 import logging
 
-from api_app.decorators import classproperty
 from api_app.views import (
     PluginConfigViewSet,
     PythonConfigViewSet,
@@ -25,7 +24,8 @@ class VisualizerConfigViewSet(PythonConfigViewSet):
 
 
 class VisualizerActionViewSet(PythonReportActionViewSet):
-    @classproperty
+    @classmethod
+    @property
     def report_model(cls):
         return VisualizerReport
 

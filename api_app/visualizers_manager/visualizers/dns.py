@@ -6,8 +6,8 @@ from api_app.analyzers_manager.models import AnalyzerConfig, AnalyzerReport
 from api_app.analyzers_manager.observable_analyzers.dns.dns_malicious_detectors.cloudflare_malicious_detector import (  # noqa: E501
     CloudFlareMaliciousDetector,
 )
-from api_app.analyzers_manager.observable_analyzers.dns.dns_malicious_detectors.dns4eu_malicious_detector import (  # noqa: E501
-    DNS4EUMaliciousDetector,
+from api_app.analyzers_manager.observable_analyzers.dns.dns_malicious_detectors.dns0_eu_malicious_detector import (  # noqa: E501
+    DNS0EUMaliciousDetector,
 )
 from api_app.analyzers_manager.observable_analyzers.dns.dns_malicious_detectors.quad9_malicious_detector import (  # noqa: E501
     Quad9MaliciousDetector,
@@ -18,8 +18,8 @@ from api_app.analyzers_manager.observable_analyzers.dns.dns_resolvers.classic_dn
 from api_app.analyzers_manager.observable_analyzers.dns.dns_resolvers.cloudflare_dns_resolver import (  # noqa: E501
     CloudFlareDNSResolver,
 )
-from api_app.analyzers_manager.observable_analyzers.dns.dns_resolvers.dns4eu_resolver import (  # noqa: E501
-    DNS4EUResolver,
+from api_app.analyzers_manager.observable_analyzers.dns.dns_resolvers.dns0_eu_resolver import (  # noqa: E501
+    DNS0EUResolver,
 )
 from api_app.analyzers_manager.observable_analyzers.dns.dns_resolvers.google_dns_resolver import (  # noqa: E501
     GoogleDNSResolver,
@@ -27,7 +27,6 @@ from api_app.analyzers_manager.observable_analyzers.dns.dns_resolvers.google_dns
 from api_app.analyzers_manager.observable_analyzers.dns.dns_resolvers.quad9_dns_resolver import (  # noqa: E501
     Quad9DNSResolver,
 )
-from api_app.decorators import classproperty
 from api_app.models import Job
 from api_app.visualizers_manager.classes import VisualizableObject, Visualizer
 from api_app.visualizers_manager.decorators import (
@@ -38,21 +37,23 @@ logger = getLogger(__name__)
 
 
 class DNS(Visualizer):
-    @classproperty
+    @classmethod
+    @property
     def first_level_analyzers(cls) -> List[str]:
         return [  # noqa
             ClassicDNSResolver.python_module,
             CloudFlareDNSResolver.python_module,
             GoogleDNSResolver.python_module,
-            DNS4EUResolver.python_module,
+            DNS0EUResolver.python_module,
             Quad9DNSResolver.python_module,
         ]
 
-    @classproperty
+    @classmethod
+    @property
     def second_level_analyzers(cls) -> List[str]:
         return [  # noqa
             CloudFlareMaliciousDetector.python_module,
-            DNS4EUMaliciousDetector.python_module,
+            DNS0EUMaliciousDetector.python_module,
             Quad9MaliciousDetector.python_module,
         ]
 
@@ -94,9 +95,13 @@ class DNS(Visualizer):
 
         for analyzer_report in self.get_analyzer_reports():
             if "dns.dns_resolvers" in analyzer_report.config.python_module:
-                first_level_elements.append(self._dns_resolution(analyzer_report=analyzer_report))
+                first_level_elements.append(
+                    self._dns_resolution(analyzer_report=analyzer_report)
+                )
             else:
-                second_level_elements.append(self._dns_block(analyzer_report=analyzer_report))
+                second_level_elements.append(
+                    self._dns_block(analyzer_report=analyzer_report)
+                )
 
         page = self.Page(name="DNS")
         page.add_level(
@@ -178,7 +183,3 @@ class DNS(Visualizer):
 
         patches = []
         return super()._monkeypatch(patches=patches)
-
-    @classmethod
-    def update(cls) -> bool:
-        return True

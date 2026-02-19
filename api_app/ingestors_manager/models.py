@@ -9,7 +9,6 @@ from django.db.models import QuerySet
 from django_celery_beat.models import CrontabSchedule, PeriodicTask
 
 from api_app.choices import PythonModuleBasePaths
-from api_app.decorators import classproperty
 from api_app.ingestors_manager.exceptions import IngestorConfigurationException
 from api_app.ingestors_manager.queryset import IngestorQuerySet, IngestorReportQuerySet
 from api_app.interfaces import CreateJobsFromPlaybookInterface
@@ -39,7 +38,9 @@ class IngestorReport(AbstractReport):
     """
 
     objects = IngestorReportQuerySet.as_manager()
-    config = models.ForeignKey("IngestorConfig", related_name="reports", on_delete=models.CASCADE)
+    config = models.ForeignKey(
+        "IngestorConfig", related_name="reports", on_delete=models.CASCADE
+    )
     report = models.JSONField(default=list, validators=[])
     name = models.CharField(blank=True, default="", max_length=50)
     task_id = models.UUIDField(null=True, blank=True)
@@ -63,7 +64,10 @@ class IngestorReport(AbstractReport):
         if isinstance(self.report, list) and self.max_size_report is not None:
             len_report = len(self.report)
             if len_report > self.max_size_report:
-                logger.warning(f"Report {self.pk} has {len_report} while max_size is {self.max_size_report}")
+                logger.warning(
+                    f"Report {self.pk} has {len_report} "
+                    f"while max_size is {self.max_size_report}"
+                )
                 self.report = self.report[: self.max_size_report]
 
     def clean(self):
@@ -102,10 +106,16 @@ class IngestorConfig(PythonConfig, CreateJobsFromPlaybookInterface):
         on_delete=models.CASCADE,
         related_name="ingestors",
     )
-    schedule = models.ForeignKey(CrontabSchedule, related_name="ingestors", on_delete=models.PROTECT)
-    periodic_task = models.OneToOneField(PeriodicTask, related_name="ingestor", on_delete=models.PROTECT)
+    schedule = models.ForeignKey(
+        CrontabSchedule, related_name="ingestors", on_delete=models.PROTECT
+    )
+    periodic_task = models.OneToOneField(
+        PeriodicTask, related_name="ingestor", on_delete=models.PROTECT
+    )
     maximum_jobs = models.IntegerField(default=10)
-    delay = models.DurationField(default=timedelta, help_text="Expects data in the format 'DD HH:MM:SS'")
+    delay = models.DurationField(
+        default=timedelta, help_text="Expects data in the format 'DD HH:MM:SS'"
+    )
 
     org_configuration = None
 
@@ -113,15 +123,18 @@ class IngestorConfig(PythonConfig, CreateJobsFromPlaybookInterface):
     def disabled_in_organizations(self) -> QuerySet:
         return OrganizationPluginConfiguration.objects.none()
 
-    @classproperty
+    @classmethod
+    @property
     def plugin_type(cls) -> str:
         return "4"
 
-    @classproperty
+    @classmethod
+    @property
     def config_exception(cls):
         return IngestorConfigurationException
 
-    @classproperty
+    @classmethod
+    @property
     def serializer_class(cls):
         from api_app.ingestors_manager.serializers import IngestorConfigSerializer
 

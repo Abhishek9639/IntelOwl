@@ -18,17 +18,7 @@ chown -R www-data:www-data ~/.quark-engine
 
 # Clone dictionaries for dnstwist analyzer
 cd /opt/deploy || exit
-
-DNSTWIST_RAW_BASE="https://raw.githubusercontent.com/elceef/dnstwist/master/dictionaries"
-
-mkdir -p dnstwist-dictionaries
-
-curl -fSL "$DNSTWIST_RAW_BASE/abused_tlds.dict" \
-  -o dnstwist-dictionaries/abused_tlds.dict
-
-curl -fSL "$DNSTWIST_RAW_BASE/common_tlds.dict" \
-  -o dnstwist-dictionaries/common_tlds.dict
-
+svn export https://github.com/elceef/dnstwist/tags/20230402/dictionaries dnstwist-dictionaries
 
 # download exiftool
 # https://exiftool.org/install.html#Unix

@@ -63,7 +63,7 @@ class ApiVoidAnalyzerTestCase(BaseAnalyzerTest):
         }
 
         return patch(
-            "requests.post",
+            "requests.get",
             return_value=type(
                 "MockResponse",
                 (),

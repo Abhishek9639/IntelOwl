@@ -5,7 +5,6 @@ import logging
 from rest_framework import mixins
 from rest_framework.exceptions import NotFound
 
-from api_app.decorators import classproperty
 from api_app.models import PluginConfig
 
 from ..permissions import isPluginActionsPermission
@@ -41,7 +40,8 @@ class AnalyzerConfigViewSet(
 
 
 class AnalyzerActionViewSet(PythonReportActionViewSet):
-    @classproperty
+    @classmethod
+    @property
     def report_model(cls):
         return AnalyzerReport
 
@@ -51,7 +51,10 @@ class AnalyzerPluginConfigViewSet(PluginConfigViewSet):
 
     def update(self, request, name=None):
         obj: AnalyzerConfig = self.get_queryset().get(name=name)
-        if obj.python_module.module == "basic_observable_analyzer.BasicObservableAnalyzer":
+        if (
+            obj.python_module.module
+            == "basic_observable_analyzer.BasicObservableAnalyzer"
+        ):
             for data in request.data:
                 try:
                     plugin_config: PluginConfig = PluginConfig.objects.get(

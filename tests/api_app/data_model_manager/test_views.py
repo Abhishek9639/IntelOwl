@@ -11,7 +11,6 @@ from api_app.data_model_manager.models import (
     FileDataModel,
     IPDataModel,
 )
-from api_app.decorators import classproperty
 from api_app.models import Job
 from tests import CustomViewSetTestCase, ViewSetTestCaseMixin
 
@@ -60,7 +59,8 @@ class DomainDataModelViewSetTestCase(ViewSetTestCaseMixin, CustomViewSetTestCase
         super().tearDownClass()
         Analyzable.objects.all().delete()
 
-    @classproperty
+    @classmethod
+    @property
     def model_class(cls) -> Type[Model]:
         return DomainDataModel
 
@@ -78,7 +78,8 @@ class DomainDataModelViewSetTestCase(ViewSetTestCaseMixin, CustomViewSetTestCase
 class IPDataModelViewSetTestCase(ViewSetTestCaseMixin, CustomViewSetTestCase):
     URL = "/api/data_model/ip"
 
-    @classproperty
+    @classmethod
+    @property
     def model_class(cls) -> Type[Model]:
         return IPDataModel
 
@@ -107,7 +108,8 @@ class IPDataModelViewSetTestCase(ViewSetTestCaseMixin, CustomViewSetTestCase):
 class FileDataModelViewSetTestCase(ViewSetTestCaseMixin, CustomViewSetTestCase):
     URL = "/api/data_model/file"
 
-    @classproperty
+    @classmethod
+    @property
     def model_class(cls) -> Type[Model]:
         return FileDataModel
 

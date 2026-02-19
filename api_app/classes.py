@@ -13,7 +13,6 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from requests import HTTPError
 
-from api_app.decorators import abstractclassproperty, classproperty
 from api_app.models import AbstractReport, Job, PythonConfig, PythonModule
 from certego_saas.apps.user.models import User
 
@@ -53,7 +52,9 @@ class Plugin(metaclass=ABCMeta):
         """
         return self._config.name
 
-    @abstractclassproperty
+    @classmethod
+    @property
+    @abstractmethod
     def python_base_path(cls) -> PosixPath:
         NotImplementedError()
 
@@ -146,12 +147,17 @@ class Plugin(metaclass=ABCMeta):
         Args:
             runtime_configuration (dict): Runtime configuration parameters.
         """
-        self.__parameters = self._config.read_configured_params(self._user, runtime_configuration)
+        self.__parameters = self._config.read_configured_params(
+            self._user, runtime_configuration
+        )
         for parameter in self.__parameters:
-            attribute_name = f"_{parameter.name}" if parameter.is_secret else parameter.name
+            attribute_name = (
+                f"_{parameter.name}" if parameter.is_secret else parameter.name
+            )
             setattr(self, attribute_name, parameter.value)
             logger.debug(
-                f"Adding to {self.__class__.__name__} param {attribute_name} with value {parameter.value} "
+                f"Adding to {self.__class__.__name__} "
+                f"param {attribute_name} with value {parameter.value} "
             )
 
     def before_run(self):
@@ -206,7 +212,9 @@ class Plugin(metaclass=ABCMeta):
         Args:
             e (Exception): The exception to log.
         """
-        if isinstance(e, (*self.get_exceptions_to_catch(), SoftTimeLimitExceeded, HTTPError)):
+        if isinstance(
+            e, (*self.get_exceptions_to_catch(), SoftTimeLimitExceeded, HTTPError)
+        ):
             error_message = self.get_error_message(e)
             logger.error(error_message)
         else:
@@ -225,7 +233,9 @@ class Plugin(metaclass=ABCMeta):
         self.report.status = self.report.STATUSES.FAILED
         self.report.save(update_fields=["status", "errors"])
         if isinstance(e, HTTPError) and (
-            hasattr(e, "response") and hasattr(e.response, "status_code") and e.response.status_code == 429
+            hasattr(e, "response")
+            and hasattr(e.response, "status_code")
+            and e.response.status_code == 429
         ):
             self.disable_for_rate_limit()
         else:
@@ -233,14 +243,18 @@ class Plugin(metaclass=ABCMeta):
         if settings.STAGE_CI:
             raise e
 
-    @abstractclassproperty
+    @classmethod
+    @property
+    @abstractmethod
     def report_model(cls) -> typing.Type[AbstractReport]:
         """
         Returns Model to be used for *init_report_object*
         """
         raise NotImplementedError()
 
-    @abstractclassproperty
+    @classmethod
+    @property
+    @abstractmethod
     def config_model(cls) -> typing.Type[PythonConfig]:
         """
         Returns Model to be used for *init_report_object*
@@ -265,7 +279,9 @@ class Plugin(metaclass=ABCMeta):
             f" '{err}'"
         )
 
-    def start(self, job_id: int, runtime_configuration: dict, task_id: str, *args, **kwargs):
+    def start(
+        self, job_id: int, runtime_configuration: dict, task_id: str, *args, **kwargs
+    ):
         """
         Entrypoint function to execute the plugin.
         calls `before_run`, `run`, `after_run`
@@ -305,7 +321,8 @@ class Plugin(metaclass=ABCMeta):
         for mock_fn in patches:
             cls.start = mock_fn(cls.start)
 
-    @classproperty
+    @classmethod
+    @property
     def python_module(cls) -> PythonModule:
         """
         Get the Python module associated with the plugin.
@@ -403,7 +420,9 @@ class Plugin(metaclass=ABCMeta):
                 self._user.membership.organization
             )
             if org_configuration.rate_limit_timeout is not None:
-                api_key_parameter = self.__parameters.filter(name__contains="api_key").first()
+                api_key_parameter = self.__parameters.filter(
+                    name__contains="api_key"
+                ).first()
                 # if we do not have api keys OR the api key was org based
                 # OR if the api key is not actually required and we do not have it set
                 if (
@@ -413,10 +432,13 @@ class Plugin(metaclass=ABCMeta):
                 ):
                     org_configuration.disable_for_rate_limit()
                 else:
-                    logger.warning(f"Not disabling {self} because api key used is personal")
+                    logger.warning(
+                        f"Not disabling {self} because api key used is personal"
+                    )
             else:
                 logger.warning(
-                    f"You are trying to disable {self} for rate limit without specifying a timeout."
+                    f"You are trying to disable {self}"
+                    " for rate limit without specifying a timeout."
                 )
         else:
             logger.info(f"User {self._user.username} is not in organization.")

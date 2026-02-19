@@ -4,8 +4,6 @@ import abc
 import logging
 from typing import Type
 
-from api_app.decorators import classproperty
-
 from ..choices import PythonModuleBasePaths, ReportStatus
 from ..classes import Plugin
 from .exceptions import ConnectorConfigurationException, ConnectorRunException
@@ -22,15 +20,18 @@ class Connector(Plugin, metaclass=abc.ABCMeta):
      and `run(self)` functions.
     """
 
-    @classproperty
+    @classmethod
+    @property
     def python_base_path(cls):
         return PythonModuleBasePaths.Connector.value
 
-    @classproperty
+    @classmethod
+    @property
     def report_model(cls) -> Type[ConnectorReport]:
         return ConnectorReport
 
-    @classproperty
+    @classmethod
+    @property
     def config_model(cls) -> Type[ConnectorConfig]:
         return ConnectorConfig
 
@@ -51,7 +52,9 @@ class Connector(Plugin, metaclass=abc.ABCMeta):
         if (
             self._config.run_on_failure
             or not self._job.analyzerreports.count()
-            or self._job.analyzerreports.exclude(status=ReportStatus.FAILED.value).exists()
+            or self._job.analyzerreports.exclude(
+                status=ReportStatus.FAILED.value
+            ).exists()
         ):
             logger.info(
                 f"Running connector {self.__class__.__name__} "
@@ -60,7 +63,8 @@ class Connector(Plugin, metaclass=abc.ABCMeta):
             )
         else:
             raise ConnectorRunException(
-                f"An analyzer has failed, unable to run connector {self.__class__.__name__}"
+                "An analyzer has failed,"
+                f" unable to run connector {self.__class__.__name__}"
             )
 
     def after_run(self):

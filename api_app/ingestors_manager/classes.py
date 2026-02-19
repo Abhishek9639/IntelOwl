@@ -8,8 +8,6 @@ from typing import Any, Type
 
 from django.utils.functional import cached_property
 
-from api_app.decorators import classproperty
-
 from ..choices import TLP, PythonModuleBasePaths
 from ..classes import Plugin
 from .exceptions import IngestorConfigurationException, IngestorRunException
@@ -27,7 +25,8 @@ class Ingestor(Plugin, metaclass=abc.ABCMeta):
     def __init__(self, config: IngestorConfig, **kwargs):
         super().__init__(config, **kwargs)
 
-    @classproperty
+    @classmethod
+    @property
     def python_base_path(cls):
         return PythonModuleBasePaths.Ingestor.value
 
@@ -35,11 +34,13 @@ class Ingestor(Plugin, metaclass=abc.ABCMeta):
     def run(self) -> typing.Iterator[Any]:
         raise NotImplementedError()
 
-    @classproperty
+    @classmethod
+    @property
     def report_model(cls) -> Type[IngestorReport]:
         return IngestorReport
 
-    @classproperty
+    @classmethod
+    @property
     def config_model(cls) -> Type[IngestorConfig]:
         return IngestorConfig
 
