@@ -1040,4 +1040,5 @@ UserEventModal.propTypes = {
 
 UserEventModal.defaultProps = {
   analyzables: [""],
+  onSubmitCallback: undefined,
 };
