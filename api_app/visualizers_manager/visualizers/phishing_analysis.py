@@ -24,7 +24,6 @@ logger = getLogger(__name__)
 
 
 class PhishingAnalysis(Visualizer):
-
     @classmethod
     def update(cls) -> bool:
         pass
@@ -36,16 +35,10 @@ class PhishingAnalysis(Visualizer):
                 config__python_module=PhishingExtractor.python_module
             )
         except AnalyzerReport.DoesNotExist:
-            return VisualizableBase(
-                value="No PhishingExtractor report", disable=True
-            )
-        screenshot_base64 = extractor_report.report.get(
-            "page_screenshot_base64", ""
-        )
+            return VisualizableBase(value="No PhishingExtractor report", disable=True)
+        screenshot_base64 = extractor_report.report.get("page_screenshot_base64", "")
         if not screenshot_base64:
-            return VisualizableBase(
-                value="No screenshot available", disable=True
-            )
+            return VisualizableBase(value="No screenshot available", disable=True)
         return VisualizableImage(
             base64=screenshot_base64,
             title="Page Screenshot",
@@ -60,9 +53,7 @@ class PhishingAnalysis(Visualizer):
                 config__python_module=PhishingExtractor.python_module
             )
         except AnalyzerReport.DoesNotExist:
-            return VisualizableBase(
-                value="No PhishingExtractor report", disable=True
-            )
+            return VisualizableBase(value="No PhishingExtractor report", disable=True)
         page_source = extractor_report.report.get("page_source", "")
         disable = not page_source
         return VisualizableDownload(
@@ -78,9 +69,7 @@ class PhishingAnalysis(Visualizer):
                 config__python_module=PhishingFormCompiler.python_module
             )
         except AnalyzerReport.DoesNotExist:
-            return VisualizableBase(
-                value="No FormCompiler report", disable=True
-            )
+            return VisualizableBase(value="No FormCompiler report", disable=True)
         has_js = form_report.report.get("has_javascript", False)
         return VisualizableBool(
             value="JavaScript Detected",
@@ -94,18 +83,13 @@ class PhishingAnalysis(Visualizer):
                 config__python_module=PhishingFormCompiler.python_module
             )
         except AnalyzerReport.DoesNotExist:
-            return VisualizableBase(
-                value="No FormCompiler report", disable=True
-            )
+            return VisualizableBase(value="No FormCompiler report", disable=True)
         extracted_urls = form_report.report.get("extracted_urls", [])
         disable = not extracted_urls
         return VisualizableVerticalList(
-            name=VisualizableBase(
-                value="Extracted URLs", disable=disable
-            ),
+            name=VisualizableBase(value="Extracted URLs", disable=disable),
             value=[
-                VisualizableBase(value=url, disable=False)
-                for url in extracted_urls
+                VisualizableBase(value=url, disable=False) for url in extracted_urls
             ],
             disable=disable,
             start_open=True,
@@ -118,18 +102,13 @@ class PhishingAnalysis(Visualizer):
                 config__python_module=PhishingFormCompiler.python_module
             )
         except AnalyzerReport.DoesNotExist:
-            return VisualizableBase(
-                value="No FormCompiler report", disable=True
-            )
+            return VisualizableBase(value="No FormCompiler report", disable=True)
         redirection_urls = form_report.report.get("redirection_urls", [])
         disable = not redirection_urls
         return VisualizableVerticalList(
-            name=VisualizableBase(
-                value="Redirection URLs", disable=disable
-            ),
+            name=VisualizableBase(value="Redirection URLs", disable=disable),
             value=[
-                VisualizableBase(value=url, disable=False)
-                for url in redirection_urls
+                VisualizableBase(value=url, disable=False) for url in redirection_urls
             ],
             disable=disable,
             start_open=True,
@@ -142,15 +121,11 @@ class PhishingAnalysis(Visualizer):
                 config__python_module=PhishingExtractor.python_module
             )
         except AnalyzerReport.DoesNotExist:
-            return VisualizableBase(
-                value="No PhishingExtractor report", disable=True
-            )
+            return VisualizableBase(value="No PhishingExtractor report", disable=True)
         http_traffic = extractor_report.report.get("page_http_traffic", [])
         disable = not http_traffic
         return VisualizableVerticalList(
-            name=VisualizableBase(
-                value="HTTP Traffic", disable=disable
-            ),
+            name=VisualizableBase(value="HTTP Traffic", disable=disable),
             value=[
                 VisualizableBase(
                     value=str(traffic),
@@ -170,9 +145,7 @@ class PhishingAnalysis(Visualizer):
             self.Level(
                 position=1,
                 size=self.LevelSize.S_3,
-                horizontal_list=self.HList(
-                    value=[self._screenshot()]
-                ),
+                horizontal_list=self.HList(value=[self._screenshot()]),
             )
         )
 
@@ -209,9 +182,7 @@ class PhishingAnalysis(Visualizer):
             self.Level(
                 position=4,
                 size=self.LevelSize.S_3,
-                horizontal_list=self.HList(
-                    value=[self._http_traffic()]
-                ),
+                horizontal_list=self.HList(value=[self._http_traffic()]),
             )
         )
 
