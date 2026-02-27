@@ -88,9 +88,7 @@ class PhishingAnalysis(Visualizer):
         disable = not extracted_urls
         return VisualizableVerticalList(
             name=VisualizableBase(value="Extracted URLs", disable=disable),
-            value=[
-                VisualizableBase(value=url, disable=False) for url in extracted_urls
-            ],
+            value=[VisualizableBase(value=url, disable=False) for url in extracted_urls],
             disable=disable,
             start_open=True,
         )
@@ -107,9 +105,7 @@ class PhishingAnalysis(Visualizer):
         disable = not redirection_urls
         return VisualizableVerticalList(
             name=VisualizableBase(value="Redirection URLs", disable=disable),
-            value=[
-                VisualizableBase(value=url, disable=False) for url in redirection_urls
-            ],
+            value=[VisualizableBase(value=url, disable=False) for url in redirection_urls],
             disable=disable,
             start_open=True,
         )
