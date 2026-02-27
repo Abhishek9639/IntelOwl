@@ -110,7 +110,7 @@ def reverse_migrate(apps, schema_editor):
 class Migration(migrations.Migration):
     atomic = False
     dependencies = [
-        ("visualizers_manager", "0040_visualizer_config_data_model"),
+        ("visualizers_manager", "0041_visualizer_config_crawl_results"),
         ("playbooks_manager", "0055_playbook_config_phishingextractor"),
     ]
 
