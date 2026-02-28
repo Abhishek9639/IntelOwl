@@ -1,3 +1,4 @@
+import json
 from logging import getLogger
 from typing import Dict, List
 
@@ -35,7 +36,7 @@ class PhishingAnalysis(Visualizer):
                 config__python_module=PhishingExtractor.python_module
             )
         except AnalyzerReport.DoesNotExist:
-            return VisualizableBase(value="No PhishingExtractor report", disable=True)
+            return VisualizableBase(value="No screenshot available", disable=True)
         screenshot_base64 = extractor_report.report.get("page_screenshot_base64", "")
         if not screenshot_base64:
             return VisualizableBase(value="No screenshot available", disable=True)
@@ -53,7 +54,9 @@ class PhishingAnalysis(Visualizer):
                 config__python_module=PhishingExtractor.python_module
             )
         except AnalyzerReport.DoesNotExist:
-            return VisualizableBase(value="No PhishingExtractor report", disable=True)
+            return VisualizableBase(
+                value="No page source available", disable=True
+            )
         page_source = extractor_report.report.get("page_source", "")
         disable = not page_source
         return VisualizableDownload(
@@ -69,7 +72,9 @@ class PhishingAnalysis(Visualizer):
                 config__python_module=PhishingFormCompiler.python_module
             )
         except AnalyzerReport.DoesNotExist:
-            return VisualizableBase(value="No FormCompiler report", disable=True)
+            return VisualizableBase(
+                value="No JavaScript detection data found", disable=True
+            )
         has_js = form_report.report.get("has_javascript", False)
         return VisualizableBool(
             value="JavaScript Detected",
@@ -83,12 +88,16 @@ class PhishingAnalysis(Visualizer):
                 config__python_module=PhishingFormCompiler.python_module
             )
         except AnalyzerReport.DoesNotExist:
-            return VisualizableBase(value="No FormCompiler report", disable=True)
+            return VisualizableBase(
+                value="No extracted URLs found", disable=True
+            )
         extracted_urls = form_report.report.get("extracted_urls", [])
         disable = not extracted_urls
         return VisualizableVerticalList(
             name=VisualizableBase(value="Extracted URLs", disable=disable),
-            value=[VisualizableBase(value=url, disable=False) for url in extracted_urls],
+            value=[
+                VisualizableBase(value=url, disable=False) for url in extracted_urls
+            ],
             disable=disable,
             start_open=True,
         )
@@ -100,44 +109,48 @@ class PhishingAnalysis(Visualizer):
                 config__python_module=PhishingFormCompiler.python_module
             )
         except AnalyzerReport.DoesNotExist:
-            return VisualizableBase(value="No FormCompiler report", disable=True)
+            return VisualizableBase(
+                value="No redirection URLs found", disable=True
+            )
         redirection_urls = form_report.report.get("redirection_urls", [])
         disable = not redirection_urls
         return VisualizableVerticalList(
             name=VisualizableBase(value="Redirection URLs", disable=disable),
-            value=[VisualizableBase(value=url, disable=False) for url in redirection_urls],
-            disable=disable,
-            start_open=True,
-        )
-
-    @visualizable_error_handler_with_params("HTTP Traffic")
-    def _http_traffic(self):
-        try:
-            extractor_report = self.get_analyzer_reports().get(
-                config__python_module=PhishingExtractor.python_module
-            )
-        except AnalyzerReport.DoesNotExist:
-            return VisualizableBase(value="No PhishingExtractor report", disable=True)
-        http_traffic = extractor_report.report.get("page_http_traffic", [])
-        disable = not http_traffic
-        return VisualizableVerticalList(
-            name=VisualizableBase(value="HTTP Traffic", disable=disable),
             value=[
-                VisualizableBase(
-                    value=str(traffic),
-                    disable=False,
-                )
-                for traffic in http_traffic
+                VisualizableBase(value=url, disable=False) for url in redirection_urls
             ],
             disable=disable,
             start_open=True,
         )
 
-    def run(self) -> List[Dict]:
-        page = self.Page(name="Phishing Analysis")
+    @visualizable_error_handler_with_params("HTTP Traffic Download")
+    def _http_traffic_download(self):
+        try:
+            extractor_report = self.get_analyzer_reports().get(
+                config__python_module=PhishingExtractor.python_module
+            )
+        except AnalyzerReport.DoesNotExist:
+            return VisualizableBase(
+                value="No HTTP traffic data available", disable=True
+            )
+        http_traffic = extractor_report.report.get("page_http_traffic", [])
+        http_har = extractor_report.report.get("page_http_har", {})
+        combined_data = {
+            "http_traffic": http_traffic,
+            "http_har": http_har,
+        }
+        payload = json.dumps(combined_data, indent=2, default=str)
+        disable = not http_traffic and not http_har
+        return VisualizableDownload(
+            value="HTTP Traffic",
+            payload=payload,
+            disable=disable,
+        )
 
-        # Level 1: Screenshot
-        page.add_level(
+    def run(self) -> List[Dict]:
+        # Tab 1: Screenshot only
+        page_screenshot = self.Page(name="Screenshot")
+        page_screenshot.add_level(
             self.Level(
                 position=1,
                 size=self.LevelSize.S_3,
@@ -145,10 +158,13 @@ class PhishingAnalysis(Visualizer):
             )
         )
 
-        # Level 2: Page source download + JS detection
-        page.add_level(
+        # Tab 2: Analysis details (source, JS, URLs, HTTP traffic)
+        page_details = self.Page(name="Analysis Details")
+
+        # Level 1: Page source download + JS detection
+        page_details.add_level(
             self.Level(
-                position=2,
+                position=1,
                 size=self.LevelSize.S_5,
                 horizontal_list=self.HList(
                     value=[
@@ -159,10 +175,10 @@ class PhishingAnalysis(Visualizer):
             )
         )
 
-        # Level 3: Extracted URLs + Redirection URLs
-        page.add_level(
+        # Level 2: Extracted URLs + Redirection URLs
+        page_details.add_level(
             self.Level(
-                position=3,
+                position=2,
                 size=self.LevelSize.S_3,
                 horizontal_list=self.HList(
                     value=[
@@ -173,17 +189,19 @@ class PhishingAnalysis(Visualizer):
             )
         )
 
-        # Level 4: HTTP Traffic
-        page.add_level(
+        # Level 3: HTTP Traffic download
+        page_details.add_level(
             self.Level(
-                position=4,
+                position=3,
                 size=self.LevelSize.S_3,
-                horizontal_list=self.HList(value=[self._http_traffic()]),
+                horizontal_list=self.HList(value=[self._http_traffic_download()]),
             )
         )
 
-        logger.debug(f"levels: {page.to_dict()}")
-        return [page.to_dict()]
+        logger.debug(
+            f"pages: {page_screenshot.to_dict()}, {page_details.to_dict()}"
+        )
+        return [page_screenshot.to_dict(), page_details.to_dict()]
 
     @classmethod
     def _monkeypatch(cls):
