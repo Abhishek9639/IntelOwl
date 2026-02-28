@@ -54,9 +54,7 @@ class PhishingAnalysis(Visualizer):
                 config__python_module=PhishingExtractor.python_module
             )
         except AnalyzerReport.DoesNotExist:
-            return VisualizableBase(
-                value="No page source available", disable=True
-            )
+            return VisualizableBase(value="No page source available", disable=True)
         page_source = extractor_report.report.get("page_source", "")
         disable = not page_source
         return VisualizableDownload(
@@ -72,9 +70,7 @@ class PhishingAnalysis(Visualizer):
                 config__python_module=PhishingFormCompiler.python_module
             )
         except AnalyzerReport.DoesNotExist:
-            return VisualizableBase(
-                value="No JavaScript detection data found", disable=True
-            )
+            return VisualizableBase(value="No JavaScript detection data found", disable=True)
         has_js = form_report.report.get("has_javascript", False)
         return VisualizableBool(
             value="JavaScript Detected",
@@ -88,16 +84,12 @@ class PhishingAnalysis(Visualizer):
                 config__python_module=PhishingFormCompiler.python_module
             )
         except AnalyzerReport.DoesNotExist:
-            return VisualizableBase(
-                value="No extracted URLs found", disable=True
-            )
+            return VisualizableBase(value="No extracted URLs found", disable=True)
         extracted_urls = form_report.report.get("extracted_urls", [])
         disable = not extracted_urls
         return VisualizableVerticalList(
             name=VisualizableBase(value="Extracted URLs", disable=disable),
-            value=[
-                VisualizableBase(value=url, disable=False) for url in extracted_urls
-            ],
+            value=[VisualizableBase(value=url, disable=False) for url in extracted_urls],
             disable=disable,
             start_open=True,
         )
@@ -109,16 +101,12 @@ class PhishingAnalysis(Visualizer):
                 config__python_module=PhishingFormCompiler.python_module
             )
         except AnalyzerReport.DoesNotExist:
-            return VisualizableBase(
-                value="No redirection URLs found", disable=True
-            )
+            return VisualizableBase(value="No redirection URLs found", disable=True)
         redirection_urls = form_report.report.get("redirection_urls", [])
         disable = not redirection_urls
         return VisualizableVerticalList(
             name=VisualizableBase(value="Redirection URLs", disable=disable),
-            value=[
-                VisualizableBase(value=url, disable=False) for url in redirection_urls
-            ],
+            value=[VisualizableBase(value=url, disable=False) for url in redirection_urls],
             disable=disable,
             start_open=True,
         )
@@ -130,9 +118,7 @@ class PhishingAnalysis(Visualizer):
                 config__python_module=PhishingExtractor.python_module
             )
         except AnalyzerReport.DoesNotExist:
-            return VisualizableBase(
-                value="No HTTP traffic data available", disable=True
-            )
+            return VisualizableBase(value="No HTTP traffic data available", disable=True)
         http_traffic = extractor_report.report.get("page_http_traffic", [])
         http_har = extractor_report.report.get("page_http_har", {})
         combined_data = {
@@ -198,9 +184,7 @@ class PhishingAnalysis(Visualizer):
             )
         )
 
-        logger.debug(
-            f"pages: {page_screenshot.to_dict()}, {page_details.to_dict()}"
-        )
+        logger.debug(f"pages: {page_screenshot.to_dict()}, {page_details.to_dict()}")
         return [page_screenshot.to_dict(), page_details.to_dict()]
 
     @classmethod
