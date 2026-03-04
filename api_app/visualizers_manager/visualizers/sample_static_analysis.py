@@ -56,9 +56,7 @@ class SampleStaticAnalysis(Visualizer):
             )
             sha256_elem = self.Title(
                 self.Base(value="SHA256", color=VisualizableColor.DARK),
-                self.Base(
-                    value=sha256[:16] + "..." if sha256 else "", copy_text=sha256
-                ),
+                self.Base(value=sha256[:16] + "..." if sha256 else "", copy_text=sha256),
                 disable=disabled or not sha256,
             )
             return file_info_title, md5_elem, sha256_elem
@@ -66,9 +64,7 @@ class SampleStaticAnalysis(Visualizer):
     @visualizable_error_handler_with_params("Cymru Hash")
     def _cymru_hash(self):
         try:
-            analyzer_report = self.get_analyzer_reports().get(
-                config__name="Cymru_Hash_Registry_Get_File"
-            )
+            analyzer_report = self.get_analyzer_reports().get(config__name="Cymru_Hash_Registry_Get_File")
         except AnalyzerReport.DoesNotExist:
             logger.warning("Cymru_Hash_Registry_Get_File report does not exist")
         else:
@@ -82,9 +78,7 @@ class SampleStaticAnalysis(Visualizer):
     @visualizable_error_handler_with_params("HybridAnalysis")
     def _hybrid_analysis(self):
         try:
-            analyzer_report = self.get_analyzer_reports().get(
-                config__name="HybridAnalysis_Get_File"
-            )
+            analyzer_report = self.get_analyzer_reports().get(config__name="HybridAnalysis_Get_File")
         except AnalyzerReport.DoesNotExist:
             logger.warning("HybridAnalysis_Get_File report does not exist")
         else:
@@ -103,9 +97,7 @@ class SampleStaticAnalysis(Visualizer):
     @visualizable_error_handler_with_params("MalwareBazaar")
     def _malware_bazaar(self):
         try:
-            analyzer_report = self.get_analyzer_reports().get(
-                config__name="MalwareBazaar_Get_File"
-            )
+            analyzer_report = self.get_analyzer_reports().get(config__name="MalwareBazaar_Get_File")
         except AnalyzerReport.DoesNotExist:
             logger.warning("MalwareBazaar_Get_File report does not exist")
         else:
@@ -122,9 +114,7 @@ class SampleStaticAnalysis(Visualizer):
     @visualizable_error_handler_with_params("OTX Check Hash")
     def _otx_check_hash(self):
         try:
-            analyzer_report = self.get_analyzer_reports().get(
-                config__name="OTX_Check_Hash"
-            )
+            analyzer_report = self.get_analyzer_reports().get(config__name="OTX_Check_Hash")
         except AnalyzerReport.DoesNotExist:
             logger.warning("OTX_Check_Hash report does not exist")
         else:
@@ -147,9 +137,7 @@ class SampleStaticAnalysis(Visualizer):
     @visualizable_error_handler_with_params("HashLookup")
     def _hashlookup(self):
         try:
-            analyzer_report = self.get_analyzer_reports().get(
-                config__name="HashLookupServer_Get_File"
-            )
+            analyzer_report = self.get_analyzer_reports().get(config__name="HashLookupServer_Get_File")
         except AnalyzerReport.DoesNotExist:
             logger.warning("HashLookupServer_Get_File report does not exist")
         else:
@@ -165,9 +153,7 @@ class SampleStaticAnalysis(Visualizer):
     @visualizable_error_handler_with_params("YARAify")
     def _yaraify(self):
         try:
-            analyzer_report = self.get_analyzer_reports().get(
-                config__name="YARAify_File_Search"
-            )
+            analyzer_report = self.get_analyzer_reports().get(config__name="YARAify_File_Search")
         except AnalyzerReport.DoesNotExist:
             logger.warning("YARAify_File_Search report does not exist")
         else:
@@ -205,9 +191,7 @@ class SampleStaticAnalysis(Visualizer):
                     value="Sections",
                     disable=disabled or not section_names,
                 ),
-                value=[
-                    self.Base(value=name, disable=disabled) for name in section_names
-                ],
+                value=[self.Base(value=name, disable=disabled) for name in section_names],
                 start_open=False,
                 max_elements_number=10,
                 report=analyzer_report,
@@ -244,7 +228,7 @@ class SampleStaticAnalysis(Visualizer):
             found = bool(report) and report != {}
             detections = []
             if isinstance(report, dict):
-                for filename, rules in report.items():
+                for _, rules in report.items():
                     if isinstance(rules, dict):
                         for rule_type, matches in rules.items():
                             if isinstance(matches, list):
@@ -300,16 +284,8 @@ class SampleStaticAnalysis(Visualizer):
             return self.Title(
                 self.Base(
                     value="Doc Info",
-                    icon=(
-                        VisualizableIcon.WARNING
-                        if has_macros
-                        else VisualizableIcon.INFO
-                    ),
-                    color=(
-                        VisualizableColor.DANGER
-                        if has_macros
-                        else VisualizableColor.INFO
-                    ),
+                    icon=(VisualizableIcon.WARNING if has_macros else VisualizableIcon.INFO),
+                    color=(VisualizableColor.DANGER if has_macros else VisualizableColor.INFO),
                 ),
                 self.Base(value="macros detected" if has_macros else "clean"),
                 disable=disabled or not found,
@@ -335,16 +311,8 @@ class SampleStaticAnalysis(Visualizer):
             return self.Title(
                 self.Base(
                     value="PDF Info",
-                    icon=(
-                        VisualizableIcon.WARNING
-                        if suspicious
-                        else VisualizableIcon.INFO
-                    ),
-                    color=(
-                        VisualizableColor.DANGER
-                        if suspicious
-                        else VisualizableColor.INFO
-                    ),
+                    icon=(VisualizableIcon.WARNING if suspicious else VisualizableIcon.INFO),
+                    color=(VisualizableColor.DANGER if suspicious else VisualizableColor.INFO),
                 ),
                 self.Base(value="suspicious" if suspicious else "clean"),
                 disable=disabled or not found,
@@ -353,9 +321,7 @@ class SampleStaticAnalysis(Visualizer):
     @visualizable_error_handler_with_params("OneNote Info")
     def _onenote_info(self):
         try:
-            analyzer_report = self.get_analyzer_reports().get(
-                config__name="OneNote_Info"
-            )
+            analyzer_report = self.get_analyzer_reports().get(config__name="OneNote_Info")
         except AnalyzerReport.DoesNotExist:
             logger.warning("OneNote_Info report does not exist")
         else:
@@ -387,9 +353,7 @@ class SampleStaticAnalysis(Visualizer):
     @visualizable_error_handler_with_params("XLM Macro")
     def _xlm_macro(self):
         try:
-            analyzer_report = self.get_analyzer_reports().get(
-                config__name="Xlm_Macro_Deobfuscator"
-            )
+            analyzer_report = self.get_analyzer_reports().get(config__name="Xlm_Macro_Deobfuscator")
         except AnalyzerReport.DoesNotExist:
             logger.warning("Xlm_Macro_Deobfuscator report does not exist")
         else:
@@ -428,11 +392,7 @@ class SampleStaticAnalysis(Visualizer):
                 self.Base(
                     value="Yara",
                     icon=VisualizableIcon.SHIELD,
-                    color=(
-                        VisualizableColor.DANGER
-                        if num_matches
-                        else VisualizableColor.INFO
-                    ),
+                    color=(VisualizableColor.DANGER if num_matches else VisualizableColor.INFO),
                 ),
                 self.Base(value=f"{num_matches} match(es)"),
                 disable=disabled or not num_matches,
@@ -453,9 +413,7 @@ class SampleStaticAnalysis(Visualizer):
     @visualizable_error_handler_with_params("Signature Info")
     def _signature_info(self):
         try:
-            analyzer_report = self.get_analyzer_reports().get(
-                config__name="Signature_Info"
-            )
+            analyzer_report = self.get_analyzer_reports().get(config__name="Signature_Info")
         except AnalyzerReport.DoesNotExist:
             logger.warning("Signature_Info report does not exist")
         else:
@@ -486,24 +444,12 @@ class SampleStaticAnalysis(Visualizer):
                 malicious = report.get("is_infected", False)
                 detections = report.get("detections", [])
                 if detections:
-                    detection = (
-                        detections[0]
-                        if isinstance(detections[0], str)
-                        else str(detections[0])
-                    )
+                    detection = detections[0] if isinstance(detections[0], str) else str(detections[0])
             return self.Title(
                 self.Base(
                     value="ClamAV",
-                    icon=(
-                        VisualizableIcon.MALWARE
-                        if malicious
-                        else VisualizableIcon.SHIELD
-                    ),
-                    color=(
-                        VisualizableColor.DANGER
-                        if malicious
-                        else VisualizableColor.SUCCESS
-                    ),
+                    icon=(VisualizableIcon.MALWARE if malicious else VisualizableIcon.SHIELD),
+                    color=(VisualizableColor.DANGER if malicious else VisualizableColor.SUCCESS),
                 ),
                 self.Base(value=detection if malicious else "clean"),
                 disable=disabled,
@@ -512,9 +458,7 @@ class SampleStaticAnalysis(Visualizer):
     @visualizable_error_handler_with_params("Quark Engine")
     def _quark_engine(self):
         try:
-            analyzer_report = self.get_analyzer_reports().get(
-                config__name="Quark_Engine"
-            )
+            analyzer_report = self.get_analyzer_reports().get(config__name="Quark_Engine")
         except AnalyzerReport.DoesNotExist:
             logger.warning("Quark_Engine report does not exist")
         else:
@@ -533,9 +477,7 @@ class SampleStaticAnalysis(Visualizer):
     @visualizable_error_handler_with_params("Strings Info")
     def _strings_info(self):
         try:
-            analyzer_report = self.get_analyzer_reports().get(
-                config__name="Strings_Info"
-            )
+            analyzer_report = self.get_analyzer_reports().get(config__name="Strings_Info")
         except AnalyzerReport.DoesNotExist:
             logger.warning("Strings_Info report does not exist")
         else:
@@ -549,9 +491,7 @@ class SampleStaticAnalysis(Visualizer):
                 num_strings = len(report.get("strings", []))
             return self.Title(
                 self.Base(value="Strings Info"),
-                self.Base(
-                    value=f"{num_strings} string(s)" if num_strings else "analyzed"
-                ),
+                self.Base(value=f"{num_strings} string(s)" if num_strings else "analyzed"),
                 disable=disabled or not found,
             )
 
@@ -576,9 +516,7 @@ class SampleStaticAnalysis(Visualizer):
                     disable=disabled or not decoded_strings,
                 ),
                 value=[
-                    self.Base(
-                        value=s if isinstance(s, str) else str(s), disable=disabled
-                    )
+                    self.Base(value=s if isinstance(s, str) else str(s), disable=disabled)
                     for s in decoded_strings[:20]
                 ],
                 start_open=False,
@@ -607,9 +545,7 @@ class SampleStaticAnalysis(Visualizer):
                     icon=VisualizableIcon.MAGNIFYING_GLASS,
                     disable=disabled or not capabilities,
                 ),
-                value=[
-                    self.Base(value=cap, disable=disabled) for cap in capabilities[:20]
-                ],
+                value=[self.Base(value=cap, disable=disabled) for cap in capabilities[:20]],
                 start_open=False,
                 max_elements_number=10,
                 report=analyzer_report,
