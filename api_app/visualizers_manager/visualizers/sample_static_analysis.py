@@ -13,7 +13,6 @@ from api_app.visualizers_manager.decorators import (
 from api_app.visualizers_manager.enums import (
     VisualizableColor,
     VisualizableIcon,
-    VisualizableSize,
 )
 
 logger = getLogger(__name__)
@@ -642,24 +641,28 @@ class SampleStaticAnalysis(Visualizer):
             )
             return quark_title, quark_rules
 
-    @visualizable_error_handler_with_params("Capa Info")
+    @visualizable_error_handler_with_params("Capa", "Capa Capabilities")
     def _capa_info(self):
         try:
             analyzer_report = self.get_analyzer_reports().get(config__name="Capa_Info")
         except AnalyzerReport.DoesNotExist:
             logger.warning("Capa_Info report does not exist")
-            return self.VList(
-                name=self.Base(
-                    value="Capa Capabilities",
+            capa_title = self.Title(
+                self.Base(
+                    value="Capa",
                     icon=VisualizableIcon.MAGNIFYING_GLASS,
-                    disable=True,
                 ),
+                self.Base(value=""),
+                disable=True,
+            )
+            capa_list = self.VList(
+                name=self.Base(value="Capa Capabilities", disable=True),
                 value=[],
                 start_open=False,
                 max_elements_number=10,
                 disable=True,
-                size=VisualizableSize.S_4,
             )
+            return capa_title, capa_list
         else:
             report = analyzer_report.report
             disabled = analyzer_report.status != ReportStatus.SUCCESS
@@ -668,10 +671,19 @@ class SampleStaticAnalysis(Visualizer):
                 rules = report.get("rules", {})
                 if isinstance(rules, dict):
                     capabilities = list(rules.keys())
-            return self.VList(
+            num_caps = len(capabilities)
+            capa_title = self.Title(
+                self.Base(
+                    value="Capa",
+                    icon=VisualizableIcon.MAGNIFYING_GLASS,
+                    color=(VisualizableColor.DANGER if num_caps else VisualizableColor.INFO),
+                ),
+                self.Base(value=f"{num_caps} capability(ies)"),
+                disable=disabled or not num_caps,
+            )
+            capa_list = self.VList(
                 name=self.Base(
                     value="Capa Capabilities",
-                    icon=VisualizableIcon.MAGNIFYING_GLASS,
                     disable=disabled or not capabilities,
                 ),
                 value=[self.Base(value=cap, disable=disabled) for cap in capabilities[:20]],
@@ -679,8 +691,8 @@ class SampleStaticAnalysis(Visualizer):
                 max_elements_number=10,
                 report=analyzer_report,
                 disable=disabled or not capabilities,
-                size=VisualizableSize.S_4,
             )
+            return capa_title, capa_list
 
     @visualizable_error_handler_with_params("BoxJS")
     def _boxjs(self):
@@ -725,17 +737,6 @@ class SampleStaticAnalysis(Visualizer):
         # --- Page 1: Overview & Hash Lookups ---
         page1 = self.Page(name="Overview")
 
-        file_info_result = self._file_info()
-        overview_elements = [file_info_result]
-
-        page1.add_level(
-            self.Level(
-                position=1,
-                size=self.LevelSize.S_3,
-                horizontal_list=self.HList(value=overview_elements),
-            )
-        )
-
         hash_lookup_elements = [
             self._cymru_hash(),
             self._hybrid_analysis(),
@@ -746,7 +747,7 @@ class SampleStaticAnalysis(Visualizer):
         ]
         page1.add_level(
             self.Level(
-                position=2,
+                position=1,
                 size=self.LevelSize.S_5,
                 horizontal_list=self.HList(value=hash_lookup_elements),
             )
@@ -755,71 +756,100 @@ class SampleStaticAnalysis(Visualizer):
         # --- Page 2: Binary & Document Analysis ---
         page2 = self.Page(name="Binary & Document Analysis")
 
-        binary_elements = []
+        # Row 1: Summary titles
+        binary_summary = []
+        # Row 2: Detailed lists
+        binary_lists = []
+
         pe_result = self._pe_info()
         if isinstance(pe_result, tuple | list):
-            binary_elements.extend(pe_result)
+            binary_summary.append(pe_result[0])  # pe_title
+            binary_lists.append(pe_result[1])  # pe_sections
         elif pe_result:
-            binary_elements.append(pe_result)
+            binary_summary.append(pe_result)
 
-        binary_elements.append(self._elf_info())
-        binary_elements.append(self._apkid())
-        binary_elements.append(self._goresym())
+        binary_summary.append(self._elf_info())
+        binary_summary.append(self._goresym())
+
+        # APKiD returns a VList (can be long) — goes to lists row
+        binary_lists.append(self._apkid())
+
+        # Doc analysis titles — also in summary row
+        binary_summary.extend(
+            [
+                self._doc_info(),
+                self._pdf_info(),
+                self._onenote_info(),
+                self._rtf_info(),
+                self._xlm_macro(),
+            ]
+        )
 
         page2.add_level(
             self.Level(
                 position=1,
-                size=self.LevelSize.S_4,
-                horizontal_list=self.HList(value=binary_elements),
+                size=self.LevelSize.S_3,
+                horizontal_list=self.HList(value=binary_summary),
             )
         )
-
-        doc_elements = [
-            self._doc_info(),
-            self._pdf_info(),
-            self._onenote_info(),
-            self._rtf_info(),
-            self._xlm_macro(),
-        ]
         page2.add_level(
             self.Level(
                 position=2,
                 size=self.LevelSize.S_5,
-                horizontal_list=self.HList(value=doc_elements),
+                horizontal_list=self.HList(value=binary_lists),
             )
         )
 
         # --- Page 3: Signatures & Rules ---
         page3 = self.Page(name="Signatures & Rules")
 
-        sig_elements = []
+        # Row 1: Match counts (summary)
+        sig_summary = []
+        # Row 2: Detailed signature lists
+        sig_lists = []
+
         yara_result = self._yara()
         if isinstance(yara_result, tuple | list):
-            sig_elements.extend(yara_result)
+            sig_summary.append(yara_result[0])  # yara_title (count)
+            sig_lists.append(yara_result[1])  # yara_sigs (list)
         elif yara_result:
-            sig_elements.append(yara_result)
+            sig_summary.append(yara_result)
 
-        sig_elements.append(self._signature_info())
+        sig_summary.append(self._signature_info())
 
         clamav_result = self._clamav()
         if isinstance(clamav_result, tuple | list):
-            sig_elements.extend(clamav_result)
+            sig_summary.append(clamav_result[0])  # clamav_title (count)
+            sig_lists.append(clamav_result[1])  # clamav_rules (list)
         elif clamav_result:
-            sig_elements.append(clamav_result)
+            sig_summary.append(clamav_result)
 
         quark_result = self._quark_engine()
         if isinstance(quark_result, tuple | list):
-            sig_elements.extend(quark_result)
+            sig_summary.append(quark_result[0])  # quark_title (count)
+            sig_lists.append(quark_result[1])  # quark_rules (list)
         elif quark_result:
-            sig_elements.append(quark_result)
+            sig_summary.append(quark_result)
 
-        sig_elements.append(self._capa_info())
+        capa_result = self._capa_info()
+        if isinstance(capa_result, tuple | list):
+            sig_summary.append(capa_result[0])  # capa_title (count)
+            sig_lists.append(capa_result[1])  # capa_list (capabilities)
+        elif capa_result:
+            sig_summary.append(capa_result)
 
         page3.add_level(
             self.Level(
                 position=1,
-                size=self.LevelSize.S_4,
-                horizontal_list=self.HList(value=sig_elements),
+                size=self.LevelSize.S_3,
+                horizontal_list=self.HList(value=sig_summary),
+            )
+        )
+        page3.add_level(
+            self.Level(
+                position=2,
+                size=self.LevelSize.S_5,
+                horizontal_list=self.HList(value=sig_lists),
             )
         )
 
@@ -828,7 +858,7 @@ class SampleStaticAnalysis(Visualizer):
         ]
         page3.add_level(
             self.Level(
-                position=2,
+                position=3,
                 size=self.LevelSize.S_5,
                 horizontal_list=self.HList(value=additional_elements),
             )
