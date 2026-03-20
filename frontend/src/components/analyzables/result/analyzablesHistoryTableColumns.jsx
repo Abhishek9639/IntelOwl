@@ -67,6 +67,7 @@ export const analyzablesHistoryTableColumns = [
     disableSortBy: true,
     maxWidth: 60,
     Filter: DefaultColumnFilter,
+    filterPlaceholder: "Search ID",
   },
   {
     Header: "User",
