@@ -48,9 +48,6 @@ from api_app.choices import (
 if typing.TYPE_CHECKING:
     from api_app.classes import Plugin
 
-from certego_saas.apps.organization.organization import Organization
-from certego_saas.models import User
-
 from api_app.decorators import classproperty
 from api_app.defaults import default_runtime
 from api_app.helpers import deprecated, get_now
@@ -65,6 +62,8 @@ from api_app.queryset import (
     PythonConfigQuerySet,
 )
 from api_app.validators import plugin_name_validator, validate_runtime_configuration
+from certego_saas.apps.organization.organization import Organization
+from certego_saas.models import User
 from intel_owl import tasks
 from intel_owl.celery import get_queue_name
 

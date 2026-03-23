@@ -7,7 +7,6 @@ from pathlib import PosixPath
 
 import requests
 from billiard.exceptions import SoftTimeLimitExceeded
-from certego_saas.apps.user.models import User
 from django.conf import settings
 from django.core.files import File
 from django.utils import timezone
@@ -16,6 +15,7 @@ from requests import HTTPError
 
 from api_app.decorators import abstractclassproperty, classproperty
 from api_app.models import AbstractReport, Job, PythonConfig, PythonModule
+from certego_saas.apps.user.models import User
 
 logger = logging.getLogger(__name__)
 
