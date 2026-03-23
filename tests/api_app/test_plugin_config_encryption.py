@@ -8,7 +8,6 @@ from tests import CustomTestCase
 
 
 class PluginConfigEncryptionTestCase(CustomTestCase):
-
     def setUp(self):
         super().setUp()
         self.vc, _ = VisualizerConfig.objects.get_or_create(

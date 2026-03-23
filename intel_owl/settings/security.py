@@ -32,9 +32,7 @@ ALLOWED_HOSTS = ["*"]
 # Fernet key for encrypting plugin secrets at rest.
 # Falls back to SECRET_KEY if PLUGIN_CONFIG_SECRET_KEY is not set.
 _raw_secret = get_secret("PLUGIN_CONFIG_SECRET_KEY", SECRET_KEY)
-PLUGIN_CONFIG_FERNET_KEY = base64.urlsafe_b64encode(
-    hashlib.sha256(_raw_secret.encode()).digest()
-)
+PLUGIN_CONFIG_FERNET_KEY = base64.urlsafe_b64encode(hashlib.sha256(_raw_secret.encode()).digest())
 
 # https://docs.djangoproject.com/en/4.2/ref/settings/#data-upload-max-memory-size
 DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * (10**6)
