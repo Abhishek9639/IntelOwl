@@ -146,12 +146,21 @@ class Plugin(metaclass=ABCMeta):
         Args:
             runtime_configuration (dict): Runtime configuration parameters.
         """
+        from api_app.models import PluginConfig
+
         self.__parameters = self._config.read_configured_params(self._user, runtime_configuration)
         for parameter in self.__parameters:
             attribute_name = f"_{parameter.name}" if parameter.is_secret else parameter.name
-            setattr(self, attribute_name, parameter.value)
+            if parameter.is_secret and isinstance(parameter.value, str):
+                # Decrypt encrypted secrets stored in DB using Fernet
+                value = PluginConfig._decrypt_value(parameter.value)
+            else:
+                value = parameter.value
+            setattr(self, attribute_name, value)
             logger.debug(
-                f"Adding to {self.__class__.__name__} param {attribute_name} with value {parameter.value} "
+                f"Adding to {self.__class__.__name__} param {attribute_name} (value hidden for secrets)"
+                if parameter.is_secret
+                else f"Adding to {self.__class__.__name__} param {attribute_name} with value {value} "
             )
 
     def before_run(self):

@@ -9,6 +9,7 @@ import typing
 import uuid
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 
+from cryptography.fernet import Fernet, InvalidToken
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.utils.timezone import now
@@ -1023,6 +1024,67 @@ class PluginConfig(OwnershipAbstractModel):
     def plugin_name(self):
         """Returns the name of the plugin associated with this configuration."""
         return self.config.name
+
+    # --- Encryption helpers ---
+
+    @staticmethod
+    def _get_fernet() -> Fernet:
+        """Returns a Fernet instance using the key from settings."""
+        from django.conf import settings
+
+        return Fernet(settings.PLUGIN_CONFIG_FERNET_KEY)
+
+    @classmethod
+    def _encrypt_value(cls, value) -> str:
+        """
+        Encrypts a JSON-serializable value and returns a UTF-8 string.
+        Only encrypts string values; other types (int, list, dict, bool)
+        are JSON-serialized first, then encrypted.
+        """
+        plaintext = json.dumps(value).encode("utf-8")
+        return cls._get_fernet().encrypt(plaintext).decode("utf-8")
+
+    @classmethod
+    def _decrypt_value(cls, encrypted_str: str):
+        """
+        Decrypts an encrypted Fernet token and returns the original Python value.
+        If the value is not a valid Fernet token (e.g., legacy plaintext), returns it as-is.
+        """
+        try:
+            plaintext = cls._get_fernet().decrypt(encrypted_str.encode("utf-8"))
+            return json.loads(plaintext.decode("utf-8"))
+        except (InvalidToken, Exception):
+            # Value is not encrypted (e.g., legacy data or non-string value)
+            return encrypted_str
+
+    @property
+    def value_for_runtime(self):
+        """
+        Returns the decrypted value if this is a secret parameter,
+        otherwise returns the raw value.
+        """
+        if self.is_secret() and isinstance(self.value, str):
+            return self._decrypt_value(self.value)
+        return self.value
+
+    def save(self, *args, **kwargs):
+        """
+        Override save to encrypt the value before storing if the parameter is a secret.
+        """
+        if self.is_secret() and self.value is not None:
+            # Only encrypt if not already encrypted (avoid double-encryption)
+            try:
+                # Test if already a valid fernet token
+                self._get_fernet().decrypt(
+                    self.value.encode("utf-8")
+                    if isinstance(self.value, str)
+                    else json.dumps(self.value).encode()
+                )
+                # If no exception - already encrypted, don't encrypt again
+            except (InvalidToken, AttributeError, Exception):
+                # Not yet encrypted — encrypt it now
+                self.value = self._encrypt_value(self.value)
+        super().save(*args, **kwargs)
 
 
 class OrganizationPluginConfiguration(models.Model):
