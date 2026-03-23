@@ -373,14 +373,15 @@ class YaraScan(FileAnalyzer):
             parameter__name="private_repositories",
             parameter__python_module=cls.python_module,
         ):
-            if not plugin.value:
+            plugin_value = plugin.decrypted_value
+            if not plugin_value:
                 continue
             owner = (
                 f"{plugin.organization.name}.{plugin.organization.owner}"
                 if plugin.for_organization
                 else plugin.owner.username
             )
-            for url, ssh_key in plugin.value.items():
+            for url, ssh_key in plugin_value.items():
                 logger.info(f"Adding personal private url {url}")
                 storage.add_repo(url, owner, ssh_key)
 

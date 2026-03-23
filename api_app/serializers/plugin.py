@@ -67,6 +67,8 @@ class PluginConfigSerializer(ModelWithOwnershipSerializer, rfs.ModelSerializer):
                 )
             ):
                 return "redacted"
+            if instance.is_secret():
+                return instance.decrypted_value
             return super().get_attribute(instance)
 
         def to_representation(self, value):
@@ -198,6 +200,10 @@ class ParameterSerializer(rfs.ModelSerializer):
         if hasattr(param, "value") and hasattr(param, "is_from_org"):
             if param.is_secret and param.is_from_org:
                 return "redacted"
+            if param.is_secret and param.value is not None:
+                from api_app.crypto import decrypt_secret
+
+                return decrypt_secret(param.value)
             return param.value
 
 

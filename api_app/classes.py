@@ -149,10 +149,13 @@ class Plugin(metaclass=ABCMeta):
         self.__parameters = self._config.read_configured_params(self._user, runtime_configuration)
         for parameter in self.__parameters:
             attribute_name = f"_{parameter.name}" if parameter.is_secret else parameter.name
-            setattr(self, attribute_name, parameter.value)
-            logger.debug(
-                f"Adding to {self.__class__.__name__} param {attribute_name} with value {parameter.value} "
-            )
+            param_value = parameter.value
+            if parameter.is_secret and param_value is not None:
+                from api_app.crypto import decrypt_secret
+
+                param_value = decrypt_secret(param_value)
+            setattr(self, attribute_name, param_value)
+            logger.debug(f"Adding to {self.__class__.__name__} param {attribute_name}")
 
     def before_run(self):
         """

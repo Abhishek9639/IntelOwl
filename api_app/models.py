@@ -1020,6 +1020,21 @@ class PluginConfig(OwnershipAbstractModel):
         return self.parameter.is_secret
 
     @property
+    def decrypted_value(self):
+        if self.is_secret():
+            from api_app.crypto import decrypt_secret
+
+            return decrypt_secret(self.value)
+        return self.value
+
+    def save(self, *args, **kwargs):
+        if self.parameter_id and self.parameter.is_secret and self.value is not None:
+            from api_app.crypto import encrypt_secret
+
+            self.value = encrypt_secret(self.value)
+        super().save(*args, **kwargs)
+
+    @property
     def plugin_name(self):
         """Returns the name of the plugin associated with this configuration."""
         return self.config.name
