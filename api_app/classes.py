@@ -349,6 +349,14 @@ class Plugin(metaclass=ABCMeta):
             if not param.configured or not param.value:
                 continue
             url = param.value
+            # Decrypt if the value is Fernet-encrypted (secret parameter)
+            if isinstance(url, str) and url.startswith("gAAAAA"):
+                try:
+                    from api_app.models import PluginConfig
+
+                    url = PluginConfig._decrypt_value(url)
+                except Exception:
+                    pass
             logger.info(f"Url retrieved to verify is {param.name} for {self}")
             return url
         if hasattr(self, "url") and self.url:
