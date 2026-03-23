@@ -833,6 +833,8 @@ class PluginConfig(OwnershipAbstractModel):
 
     Attributes:
         value (JSONField): The configuration value in JSON format.
+            For secret parameters, this field stores an encrypted
+            Fernet token rather than the plaintext value.
         parameter (ForeignKey): The parameter this configuration is associated with.
         updated_at (DateTimeField): The timestamp of the last update.
         analyzer_config (ForeignKey): The analyzer configuration this config belongs to.
@@ -1018,6 +1020,45 @@ class PluginConfig(OwnershipAbstractModel):
     def is_secret(self):
         """Returns whether the parameter is marked as secret."""
         return self.parameter.is_secret
+
+    @property
+    def decrypted_value(self):
+        """
+        Returns the decrypted value if the parameter is a secret,
+        otherwise returns the raw value.
+        """
+        from api_app.crypto import decrypt_secret, is_encrypted
+
+        if (
+            self.parameter.is_secret
+            and self.value is not None
+            and is_encrypted(self.value)
+        ):
+            try:
+                return decrypt_secret(self.value)
+            except Exception:
+                logger.warning(
+                    f"Failed to decrypt secret for "
+                    f"parameter {self.parameter.name}. "
+                    f"Returning raw value."
+                )
+                return self.value
+        return self.value
+
+    def save(self, *args, **kwargs):
+        """
+        Overrides save to encrypt the value if the parameter
+        is marked as a secret.
+        """
+        from api_app.crypto import encrypt_secret, is_encrypted
+
+        if (
+            self.parameter.is_secret
+            and self.value is not None
+            and not is_encrypted(self.value)
+        ):
+            self.value = encrypt_secret(self.value)
+        super().save(*args, **kwargs)
 
     @property
     def plugin_name(self):

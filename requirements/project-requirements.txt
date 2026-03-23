@@ -111,6 +111,9 @@ defusedxml==0.7.1
 # required by MalwareBazaar Ingestor -> https://bazaar.abuse.ch/api/#download (read the warning)
 pyzipper==0.3.6
 
+# encryption
+cryptography>=43.0.0
+
 # others
 dateparser==1.2.0
 DeepDiff==8.6.1

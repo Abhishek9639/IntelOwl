@@ -10,6 +10,10 @@ from .commons import STAGE_LOCAL, WEB_CLIENT_DOMAIN
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = get_secret("DJANGO_SECRET", None) or get_random_secret_key()
 
+# Key used to encrypt secrets stored in the database (PluginConfig values).
+# If not set, the DJANGO_SECRET is used as a fallback.
+SECRETS_ENCRYPTION_KEY = get_secret("SECRETS_ENCRYPTION_KEY", None)
+
 HTTPS_ENABLED = get_secret("HTTPS_ENABLED", False) == "True"
 if HTTPS_ENABLED:
     CSRF_COOKIE_SECURE = True

@@ -146,12 +146,24 @@ class Plugin(metaclass=ABCMeta):
         Args:
             runtime_configuration (dict): Runtime configuration parameters.
         """
+        from api_app.crypto import decrypt_secret, is_encrypted
+
         self.__parameters = self._config.read_configured_params(self._user, runtime_configuration)
         for parameter in self.__parameters:
             attribute_name = f"_{parameter.name}" if parameter.is_secret else parameter.name
-            setattr(self, attribute_name, parameter.value)
+            value = parameter.value
+            # Decrypt if the value is an encrypted secret
+            if parameter.is_secret and value is not None and is_encrypted(value):
+                try:
+                    value = decrypt_secret(value)
+                except Exception:
+                    logger.warning(
+                        f"Failed to decrypt {parameter.name} for "
+                        f"{self.__class__.__name__}. Using raw value."
+                    )
+            setattr(self, attribute_name, value)
             logger.debug(
-                f"Adding to {self.__class__.__name__} param {attribute_name} with value {parameter.value} "
+                f"Adding to {self.__class__.__name__} param {attribute_name} with value {value} "
             )
 
     def before_run(self):

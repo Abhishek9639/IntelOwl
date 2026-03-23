@@ -1,5 +1,8 @@
 # Required Secrets
 DJANGO_SECRET=
+# Optional: dedicated key for encrypting secrets in the database.
+# If not set, DJANGO_SECRET is used as a fallback.
+SECRETS_ENCRYPTION_KEY=
 DB_HOST=postgres
 DB_PORT=5432
 DB_USER=user
