@@ -1,0 +1,246 @@
+name: Check Dependency Updates
+
+on:
+  schedule:
+    # Run every Monday at 6:00 AM UTC (weekly, like dependabot)
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-pycti:
+    # pycti is hardcoded as a Docker ARG and in hardcoded-requirements.txt
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+        with:
+          ref: develop
+
+      - name: Check for pycti updates
+        id: check
+        run: |
+          set -e
+
+          CURRENT_VERSION=$(grep -oP 'ARG PYCTI_VERSION=\K[0-9.]+' docker/Dockerfile)
+          echo "Current pycti version: ${CURRENT_VERSION}"
+
+          LATEST_VERSION=$(curl -sf https://pypi.org/pypi/pycti/json | python3 -c "import sys, json; print(json.load(sys.stdin)['info']['version'])")
+          echo "Latest pycti version: ${LATEST_VERSION}"
+
+          echo "current_version=${CURRENT_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "latest_version=${LATEST_VERSION}" >> "$GITHUB_OUTPUT"
+
+          if [ "${CURRENT_VERSION}" != "${LATEST_VERSION}" ]; then
+            echo "update_available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "update_available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update pycti version
+        if: steps.check.outputs.update_available == 'true'
+        run: |
+          CURRENT="${{ steps.check.outputs.current_version }}"
+          LATEST="${{ steps.check.outputs.latest_version }}"
+
+          sed -i "s/ARG PYCTI_VERSION=${CURRENT}/ARG PYCTI_VERSION=${LATEST}/" docker/Dockerfile
+          sed -i "s/pycti==${CURRENT}/pycti==${LATEST}/" requirements/hardcoded-requirements.txt
+
+      - name: Create Pull Request for pycti
+        if: steps.check.outputs.update_available == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Update pycti from ${{ steps.check.outputs.current_version }} to ${{ steps.check.outputs.latest_version }}"
+          title: "Update pycti from ${{ steps.check.outputs.current_version }} to ${{ steps.check.outputs.latest_version }}"
+          body: |
+            Updates pycti from `${{ steps.check.outputs.current_version }}` to `${{ steps.check.outputs.latest_version }}`.
+
+            PyPI: https://pypi.org/project/pycti/${{ steps.check.outputs.latest_version }}/
+
+            Changes in:
+            - `docker/Dockerfile`
+            - `requirements/hardcoded-requirements.txt`
+          branch: deps/update-pycti-${{ steps.check.outputs.latest_version }}
+          base: develop
+          labels: |
+            dependencies
+            maintenance
+
+  check-droidlysis:
+    # droidlysis doesn't make releases, we pin to a specific commit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+        with:
+          ref: develop
+
+      - name: Check for droidlysis updates
+        id: check
+        run: |
+          set -e
+
+          CURRENT_COMMIT=$(grep -oP 'droidlysis@\K[a-f0-9]+' integrations/malware_tools_analyzers/requirements/droidlysis-requirements.txt)
+          echo "Current droidlysis commit: ${CURRENT_COMMIT}"
+
+          LATEST_COMMIT=$(curl -sf https://api.github.com/repos/cryptax/droidlysis/commits/master | python3 -c "import sys, json; print(json.load(sys.stdin)['sha'][:7])")
+          echo "Latest droidlysis commit: ${LATEST_COMMIT}"
+
+          echo "current_commit=${CURRENT_COMMIT}" >> "$GITHUB_OUTPUT"
+          echo "latest_commit=${LATEST_COMMIT}" >> "$GITHUB_OUTPUT"
+
+          if [ "${CURRENT_COMMIT}" != "${LATEST_COMMIT}" ]; then
+            echo "update_available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "update_available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update droidlysis commit
+        if: steps.check.outputs.update_available == 'true'
+        run: |
+          CURRENT="${{ steps.check.outputs.current_commit }}"
+          LATEST="${{ steps.check.outputs.latest_commit }}"
+
+          sed -i "s/droidlysis@${CURRENT}/droidlysis@${LATEST}/" integrations/malware_tools_analyzers/requirements/droidlysis-requirements.txt
+
+      - name: Create Pull Request for droidlysis
+        if: steps.check.outputs.update_available == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Update droidlysis from ${{ steps.check.outputs.current_commit }} to ${{ steps.check.outputs.latest_commit }}"
+          title: "Update droidlysis from ${{ steps.check.outputs.current_commit }} to ${{ steps.check.outputs.latest_commit }}"
+          body: |
+            Updates droidlysis pinned commit from `${{ steps.check.outputs.current_commit }}` to `${{ steps.check.outputs.latest_commit }}`.
+
+            Repo: https://github.com/cryptax/droidlysis
+            Commits: https://github.com/cryptax/droidlysis/commits/master
+
+            Note: droidlysis does not make releases, we pin to a specific commit.
+            Please review the changes between commits before merging.
+
+            Changes in:
+            - `integrations/malware_tools_analyzers/requirements/droidlysis-requirements.txt`
+          branch: deps/update-droidlysis-${{ steps.check.outputs.latest_commit }}
+          base: develop
+          labels: |
+            dependencies
+            maintenance
+
+  check-goresym:
+    # GoReSym creates releases in the repo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+        with:
+          ref: develop
+
+      - name: Check for GoReSym updates
+        id: check
+        run: |
+          set -e
+
+          CURRENT_VERSION=$(grep -oP 'GoReSym/releases/download/v\K[0-9.]+' integrations/malware_tools_analyzers/Dockerfile | head -1)
+          echo "Current GoReSym version: ${CURRENT_VERSION}"
+
+          LATEST_VERSION=$(curl -sf https://api.github.com/repos/mandiant/GoReSym/releases/latest | python3 -c "import sys, json; print(json.load(sys.stdin)['tag_name'].lstrip('v'))")
+          echo "Latest GoReSym version: ${LATEST_VERSION}"
+
+          echo "current_version=${CURRENT_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "latest_version=${LATEST_VERSION}" >> "$GITHUB_OUTPUT"
+
+          if [ "${CURRENT_VERSION}" != "${LATEST_VERSION}" ]; then
+            echo "update_available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "update_available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update GoReSym version
+        if: steps.check.outputs.update_available == 'true'
+        run: |
+          CURRENT="${{ steps.check.outputs.current_version }}"
+          LATEST="${{ steps.check.outputs.latest_version }}"
+
+          sed -i "s|GoReSym/releases/download/v${CURRENT}|GoReSym/releases/download/v${LATEST}|g" integrations/malware_tools_analyzers/Dockerfile
+
+      - name: Create Pull Request for GoReSym
+        if: steps.check.outputs.update_available == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Update GoReSym from v${{ steps.check.outputs.current_version }} to v${{ steps.check.outputs.latest_version }}"
+          title: "Update GoReSym from v${{ steps.check.outputs.current_version }} to v${{ steps.check.outputs.latest_version }}"
+          body: |
+            Updates GoReSym from `v${{ steps.check.outputs.current_version }}` to `v${{ steps.check.outputs.latest_version }}`.
+
+            Release: https://github.com/mandiant/GoReSym/releases/latest
+
+            Changes in:
+            - `integrations/malware_tools_analyzers/Dockerfile`
+          branch: deps/update-goresym-v${{ steps.check.outputs.latest_version }}
+          base: develop
+          labels: |
+            dependencies
+            maintenance
+
+  check-boxjs:
+    # box-js version is hardcoded in npm install command in Dockerfile
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+        with:
+          ref: develop
+
+      - name: Check for box-js updates
+        id: check
+        run: |
+          set -e
+
+          CURRENT_VERSION=$(grep -oP 'box-js@\K[0-9.]+' integrations/malware_tools_analyzers/Dockerfile)
+          echo "Current box-js version: ${CURRENT_VERSION}"
+
+          LATEST_VERSION=$(curl -sf https://registry.npmjs.org/box-js/latest | python3 -c "import sys, json; print(json.load(sys.stdin)['version'])")
+          echo "Latest box-js version: ${LATEST_VERSION}"
+
+          echo "current_version=${CURRENT_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "latest_version=${LATEST_VERSION}" >> "$GITHUB_OUTPUT"
+
+          if [ "${CURRENT_VERSION}" != "${LATEST_VERSION}" ]; then
+            echo "update_available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "update_available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update box-js version
+        if: steps.check.outputs.update_available == 'true'
+        run: |
+          CURRENT="${{ steps.check.outputs.current_version }}"
+          LATEST="${{ steps.check.outputs.latest_version }}"
+
+          sed -i "s/box-js@${CURRENT}/box-js@${LATEST}/" integrations/malware_tools_analyzers/Dockerfile
+
+      - name: Create Pull Request for box-js
+        if: steps.check.outputs.update_available == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Update box-js from ${{ steps.check.outputs.current_version }} to ${{ steps.check.outputs.latest_version }}"
+          title: "Update box-js from ${{ steps.check.outputs.current_version }} to ${{ steps.check.outputs.latest_version }}"
+          body: |
+            Updates box-js from `${{ steps.check.outputs.current_version }}` to `${{ steps.check.outputs.latest_version }}`.
+
+            npm: https://www.npmjs.com/package/box-js
+
+            Changes in:
+            - `integrations/malware_tools_analyzers/Dockerfile`
+          branch: deps/update-boxjs-${{ steps.check.outputs.latest_version }}
+          base: develop
+          labels: |
+            dependencies
+            maintenance
