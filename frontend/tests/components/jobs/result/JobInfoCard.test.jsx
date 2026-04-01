@@ -75,7 +75,7 @@ describe("test JobInfoCard (job report)", () => {
             observable_classification: "domain",
             file_name: "",
             file_mimetype: "",
-            status: "reported_without_fails",
+            status: "running",
             runtime_configuration: {
               analyzers: {},
               connectors: {},
@@ -175,9 +175,7 @@ describe("test JobInfoCard (job report)", () => {
     expect(JobInfoCardDropDownButton).toBeInTheDocument();
     // metadata - first line
     expect(within(JobInfoCardSection).getByText("Status")).toBeInTheDocument();
-    expect(
-      within(JobInfoCardSection).getByText("REPORTED WITHOUT FAILS"),
-    ).toBeInTheDocument();
+    expect(within(JobInfoCardSection).getByText("RUNNING")).toBeInTheDocument();
     expect(within(JobInfoCardSection).getByText("TLP")).toBeInTheDocument();
     expect(within(JobInfoCardSection).getByText("AMBER")).toBeInTheDocument();
     expect(within(JobInfoCardSection).getByText("User")).toBeInTheDocument();
