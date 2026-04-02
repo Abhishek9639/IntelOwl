@@ -79,10 +79,10 @@ class CronTests(CustomTestCase):
 
         _job.finished_analysis_time = now() - datetime.timedelta(days=10)
         _job.save()
+        an_pk = an.pk
         self.assertEqual(remove_old_jobs(), 1)
-
-        _job.delete()
-        an.delete()
+        # verify orphaned analyzable is also cleaned up
+        self.assertFalse(Analyzable.objects.filter(pk=an_pk).exists())
 
     @if_mock_connections(skip("not working without connection"))
     def test_maxmind_updater(self):
