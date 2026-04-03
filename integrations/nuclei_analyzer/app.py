@@ -34,12 +34,28 @@ logger.setLevel(log_level)
 # Flask application instance with secret key
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", os.urandom(24).hex())
+# Disable Werkzeug 3.x default form memory limit (500kB) to avoid false 400
+# errors on multipart requests.
+# See: https://werkzeug.palletsprojects.com/en/stable/changes/#version-3-1-0
+app.config["MAX_FORM_MEMORY_SIZE"] = None
+app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024 * 1024  # 1GB
 
 # Initialize the Executor for background task processing
 executor = Executor(app)
 
 # Initialize the Shell2HTTP for exposing shell commands as HTTP endpoints
 shell2http = Shell2HTTP(app=app, executor=executor)
+
+
+# ensure error responses are JSON (not HTML) for flask-shell2http callers
+@app.errorhandler(400)
+def bad_request(e):
+    return {"error": str(e)}, 400
+
+
+@app.errorhandler(413)
+def too_large(e):
+    return {"error": str(e)}, 413
 
 
 @app.route("/health", methods=["GET"])

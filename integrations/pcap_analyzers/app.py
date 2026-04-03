@@ -39,8 +39,24 @@ logger.setLevel(log_level)
 # Globals
 app = Flask(__name__)
 app.config["SECRET_KEY"] = secrets.token_hex(16)
+# Disable Werkzeug 3.x default form memory limit (500kB) to avoid false 400
+# errors on multipart requests.
+# See: https://werkzeug.palletsprojects.com/en/stable/changes/#version-3-1-0
+app.config["MAX_FORM_MEMORY_SIZE"] = None
+app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024 * 1024  # 1GB
 executor = Executor(app)
 shell2http = Shell2HTTP(app, executor)
+
+
+# ensure error responses are JSON (not HTML) for flask-shell2http callers
+@app.errorhandler(400)
+def bad_request(e):
+    return {"error": str(e)}, 400
+
+
+@app.errorhandler(413)
+def too_large(e):
+    return {"error": str(e)}, 413
 
 
 def intercept_suricata_result(context, future: Future) -> None:
