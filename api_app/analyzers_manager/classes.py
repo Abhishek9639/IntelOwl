@@ -292,7 +292,7 @@ class DockerBasedAnalyzer(BaseAnalyzerMixin, metaclass=ABCMeta):
         if resp.status_code == 400:
             try:
                 err = resp.json().get("error", "")
-            except (ValueError, requests.exceptions.JSONDecodeError):
+            except ValueError:
                 err = resp.text or f"Bad Request in {name} docker container"
             raise AnalyzerRunException(err)
         if resp.status_code == 500:
