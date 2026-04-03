@@ -290,7 +290,10 @@ class DockerBasedAnalyzer(BaseAnalyzerMixin, metaclass=ABCMeta):
         if resp.status_code == 404:
             raise AnalyzerConfigurationException(f"{name} docker container is not running.")
         if resp.status_code == 400:
-            err = resp.json().get("error", "")
+            try:
+                err = resp.json().get("error", "")
+            except (ValueError, requests.exceptions.JSONDecodeError):
+                err = resp.text or f"Bad Request in {name} docker container"
             raise AnalyzerRunException(err)
         if resp.status_code == 500:
             raise AnalyzerRunException(f"Internal Server Error in {name} docker container")
