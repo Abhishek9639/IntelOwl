@@ -36,6 +36,7 @@ class Validin(classes.ObservableAnalyzer):
                         logger.error(f"Query {query_name} failed")
 
                         # we wont stop other quries from executing if one fails
+                        continue
                     final_response[f"{query_name}"] = response.json()
                 except requests.RequestException as e:
                     raise AnalyzerRunException(e)
