@@ -19,7 +19,7 @@ from api_app.analyzers_manager.observable_analyzers import (
 )
 from api_app.choices import Classification
 from api_app.models import Job
-from intel_owl.tasks import check_stuck_analysis, remove_old_jobs
+from intel_owl.tasks import check_stuck_analysis, job_pipeline, remove_old_jobs
 
 from . import CustomTestCase, get_logger
 from .mock_utils import MockUpResponse, if_mock_connections, patch, skip
@@ -55,6 +55,44 @@ class CronTests(CustomTestCase):
         _job.status = Job.STATUSES.ANALYZERS_RUNNING.value
         _job.save()
         self.assertCountEqual(check_stuck_analysis(check_pending=False), [_job.pk])
+        _job.delete()
+        an.delete()
+
+    def test_job_pipeline_exception_sets_job_to_failed(self):
+        """
+        Regression test for GitHub issue #3653.
+        When job.execute() raises an exception inside job_pipeline,
+        the Job object must be marked as FAILED (not left stuck in RUNNING),
+        finished_analysis_time must be set, and the error must be recorded.
+        """
+        an = Analyzable.objects.create(
+            name="8.8.8.8",
+            classification=Classification.IP,
+        )
+        _job = Job.objects.create(
+            user=self.user,
+            status=Job.STATUSES.PENDING.value,
+            analyzable=an,
+        )
+        error_message = "Simulated broker failure"
+        with (
+            patch.object(
+                _job.__class__,
+                "execute",
+                side_effect=Exception(error_message),
+            ),
+            patch("api_app.websocket.JobConsumer.serialize_and_send_job"),
+            patch(
+                "api_app.models.Job.objects.get",
+                return_value=_job,
+            ),
+        ):
+            job_pipeline(_job.pk)
+
+        _job.refresh_from_db()
+        self.assertEqual(_job.status, Job.STATUSES.FAILED.value)
+        self.assertIsNotNone(_job.finished_analysis_time)
+        self.assertIn(error_message, _job.errors)
         _job.delete()
         an.delete()
 

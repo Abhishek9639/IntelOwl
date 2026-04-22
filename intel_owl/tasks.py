@@ -248,6 +248,7 @@ def job_pipeline(
     job_id: int,
 ):
     from api_app.models import Job
+    from api_app.websocket import JobConsumer
 
     job = Job.objects.get(pk=job_id)
     try:
@@ -262,6 +263,14 @@ def job_pipeline(
         ):
             report.status = report.STATUSES.FAILED.value
             report.save()
+        # mark job as failed and notify; job_set_final_status won't run since the pipeline never started
+        job.status = Job.STATUSES.FAILED.value
+        job.errors.append(str(e))
+        job.finished_analysis_time = now()
+        job.save(update_fields=["status", "errors", "finished_analysis_time"])
+        if root_investigation := job.get_root().investigation:
+            root_investigation.set_correct_status(save=True)
+        JobConsumer.serialize_and_send_job(job)
 
 
 @shared_task(base=FailureLoggedTask, name="run_plugin", soft_time_limit=500)
